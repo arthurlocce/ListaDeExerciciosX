@@ -2,10 +2,6 @@ import random
 import time
 import statistics
 import multiprocessing as mp
-import pandas as pd
-import matplotlib.pyplot as plt
-import os
-import shutil
 
 # ==========================
 # CONFIGURAÇÕES DO TESTE
@@ -16,10 +12,6 @@ ALGORITMOS = ["Insertion Sort", "Merge Sort", "Heap Sort"]
 REPETICOES = 3
 LIMITE_TEMPO = 300  # 5 minutos em segundos
 SEED = 2026
-
-ARQUIVO_MODELO = "PlanilhaListaDeExerciciosX.xlsx"
-ARQUIVO_SAIDA = "PlanilhaListaDeExerciciosX_preenchida.xlsx"
-ARQUIVO_GRAFICO = "grafico_tempos_medios.png"
 
 
 # ==========================
@@ -182,6 +174,62 @@ def executar_com_timeout(nome_algoritmo, vetor_original):
     return None, None, "Erro desconhecido"
 
 
+def formatar_valor(valor):
+    if valor is None:
+        return "N/C"
+
+    if isinstance(valor, float):
+        return f"{valor:.6f}"
+
+    return str(valor)
+
+
+def imprimir_resultados(resultados):
+    colunas = [
+        "Algoritmo",
+        "Tamanho do vetor",
+        "Execução 1 (s)",
+        "Execução 2 (s)",
+        "Execução 3 (s)",
+        "Tempo médio (s)",
+        "Desvio padrão",
+        "Trocas/Movimentações",
+        "Status"
+    ]
+
+    linhas = []
+
+    for resultado in resultados:
+        linhas.append([formatar_valor(resultado[coluna]) for coluna in colunas])
+
+    larguras = []
+
+    for indice, coluna in enumerate(colunas):
+        maior_largura = len(coluna)
+
+        for linha in linhas:
+            maior_largura = max(maior_largura, len(linha[indice]))
+
+        larguras.append(maior_largura)
+
+    cabecalho = " | ".join(
+        coluna.ljust(larguras[indice])
+        for indice, coluna in enumerate(colunas)
+    )
+
+    separador = "-+-".join("-" * largura for largura in larguras)
+
+    print("\nResultados finais:")
+    print(cabecalho)
+    print(separador)
+
+    for linha in linhas:
+        print(" | ".join(
+            valor.ljust(larguras[indice])
+            for indice, valor in enumerate(linha)
+        ))
+
+
 # ==========================
 # EXPERIMENTO PRINCIPAL
 # ==========================
@@ -242,74 +290,7 @@ def main():
                 "Status": status_final
             })
 
-    df = pd.DataFrame(resultados)
-
-    print("\nResultados finais:")
-    print(df)
-
-    # ==========================
-    # GERAR GRÁFICO
-    # ==========================
-
-    df_grafico = df.dropna(subset=["Tempo médio (s)"])
-
-    tabela_grafico = df_grafico.pivot(
-        index="Tamanho do vetor",
-        columns="Algoritmo",
-        values="Tempo médio (s)"
-    )
-    tabela_grafico = tabela_grafico.reindex(columns=ALGORITMOS)
-
-    ax = tabela_grafico.plot(kind="line", figsize=(10, 4), linewidth=3)
-
-    ax.set_title("Tempo médio por tamanho do vetor", fontsize=15, pad=10)
-    ax.set_xlabel("Tamanho do vetor")
-    ax.set_ylabel("Tempo médio em segundos")
-    ax.grid(True, linestyle="--", alpha=0.4)
-    ax.legend(loc="lower center", bbox_to_anchor=(0.5, -0.32), ncol=3)
-
-    plt.tight_layout()
-    plt.savefig(ARQUIVO_GRAFICO)
-    plt.close()
-
-    # ==========================
-    # GERAR EXCEL
-    # ==========================
-
-    if os.path.exists(ARQUIVO_MODELO):
-        shutil.copyfile(ARQUIVO_MODELO, ARQUIVO_SAIDA)
-        modo = "a"
-    else:
-        modo = "w"
-
-    with pd.ExcelWriter(
-        ARQUIVO_SAIDA,
-        engine="openpyxl",
-        mode=modo,
-        if_sheet_exists="replace" if modo == "a" else None
-    ) as writer:
-        df.to_excel(writer, sheet_name="Resultados", index=False)
-
-    # Colocar gráfico dentro do Excel
-    from openpyxl import load_workbook
-    from openpyxl.drawing.image import Image as ExcelImage
-
-    wb = load_workbook(ARQUIVO_SAIDA)
-
-    if "Gráfico" in wb.sheetnames:
-        del wb["Gráfico"]
-
-    ws = wb.create_sheet("Gráfico")
-
-    img = ExcelImage(ARQUIVO_GRAFICO)
-    ws.add_image(img, "A1")
-
-    wb.save(ARQUIVO_SAIDA)
-
-    print("\nArquivo gerado com sucesso:")
-    print(ARQUIVO_SAIDA)
-    print("\nGráfico gerado:")
-    print(ARQUIVO_GRAFICO)
+    imprimir_resultados(resultados)
 
 
 if __name__ == "__main__":
