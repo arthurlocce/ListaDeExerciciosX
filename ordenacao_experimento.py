@@ -260,13 +260,13 @@ def main():
     )
     tabela_grafico = tabela_grafico.reindex(columns=ALGORITMOS)
 
-    ax = tabela_grafico.plot(kind="line", figsize=(10, 6), linewidth=3)
+    ax = tabela_grafico.plot(kind="line", figsize=(10, 4), linewidth=3)
 
-    ax.set_title("Tempo médio por tamanho do vetor")
+    ax.set_title("Tempo médio por tamanho do vetor", fontsize=15, pad=10)
     ax.set_xlabel("Tamanho do vetor")
     ax.set_ylabel("Tempo médio em segundos")
     ax.grid(True, linestyle="--", alpha=0.4)
-    ax.legend(loc="lower center", bbox_to_anchor=(0.5, -0.18), ncol=3)
+    ax.legend(loc="lower center", bbox_to_anchor=(0.5, -0.32), ncol=3)
 
     plt.tight_layout()
     plt.savefig(ARQUIVO_GRAFICO)
